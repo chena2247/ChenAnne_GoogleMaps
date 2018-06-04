@@ -2,10 +2,17 @@ package com.example.chena2247.googlemaps;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Criteria;
+import android.location.Geocoder;
+import android.location.LocationManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -13,6 +20,10 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -49,26 +60,90 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.addMarker(new MarkerOptions().position(palo).title("Birthplace"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(palo));
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED){
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Log.d("MyMapsApp", "Failed FINE permission check");
-            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, 2);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 2);
         }
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)!= PackageManager.PERMISSION_GRANTED){
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Log.d("MyMapsApp", "Failed COARSE permission check");
-            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.ACCESS_COARSE_LOCATION}, 2);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 2);
         }
 
         if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)
-                || (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)){
+                || (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)) {
             mMap.setMyLocationEnabled(true);
         }
 
-        locationSearch = (EditText) findViewbyId(R.id.editText_addr);
-
+        locationSearch = (EditText) findViewById(R.id.editText_addr);
+    }
         //onSearch()
-        public void onSearch(View v) {
-            String location
+    public void onSearch(View v) {
+        String location = locationSearch.getText().toString();
+
+        List<Address> addressList = null;
+        List<Address> addressListzip = null;
+
+        //Use LocationManager for user location
+        //Implement the LocationListener interface to setup location services
+        LocationManager service = (LocationManager) getSystemService(LOCATION_SERVICE);
+        Criteria criteria = new Criteria();
+        String provider = service.getBestProvider(criteria, false);
+
+        Log.d("MyMapsApp", "onSearch: location = " + location);
+        Log.d("MyMapsApp", "onSearch: provider = " + provider);
+
+        LatLng userLocation = null;
+
+        try {
+            if (locationManager != null) {
+                Log.d("MyMapsApp", "onSearch: locationManager is not null ");
+
+                if (myLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) != null) {
+                    userLocation = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
+                    Log.d("MyMapsApp", "onSearch:using NETWORK_PROVIDER userLocation is: " + myLocation.getLatitude() + " " + myLocation.getLongitude());
+                    Toast.makeText(this, "UserLoc" + myLocation.getLatitude() + myLocation.getLongitude(), Toast.LENGTH_SHORT);
+                } else if (myLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) != null) {
+                    Log.d("MyMapsApp", "onSearch: locationManager is not null ");
+                    userLocation = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
+                    Log.d("MyMapsApp", "onSearch:using NETWORK_PROVIDER userLocation is: " + myLocation.getLatitude() + " " + myLocation.getLongitude());
+                    Toast.makeText(this, "UserLoc" + myLocation.getLatitude() + myLocation.getLongitude(), Toast.LENGTH_SHORT);
+                } else {
+                    Log.d("MyMapsApp", "onSearch: locationManager is null from getLastKnownLocation");
+                }
+            }
+        } catch (SecurityException | IllegalArgumentException e) {
+            Log.d("MyMapsApp", "onSearch: Exception getLastKnownLocation");
+            Toast.makeText(this, "onSearch: Exception getLastKnownLocation", Toast.LENGTH_SHORT);
+        }
+
+        //Get the location if it exists
+        if (!location.matches("")){
+            Log.d("myMapsApp","onSearch:location field is populated");
+            Geocoder geocoder = new Geocoder(this, Locale.US);
+
+            try {
+                //Get a list of the addresses
+                addressList = geocoder.getFromLocationName(location, 100,
+                        userLocation.latitude - (5.0 / 60),
+                        userLocation.longitude - (5.0 / 60),
+                        userLocation.latitude + (5.0 / 60),
+                        userLocation.longitude + (5.0 / 60));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if (!addressList.isEmpty()) {
+                Log.d("MyMapsApp", "onSearch: AddressList size is: " + addressList.size());
+                for (int i=0; i<addressList.size(); i++) {
+                    Address address = addressList.get(i);
+                    LatLng latLng = new LatLng(address.getLatitude(), address.getLongitude());
+
+                    //Place a marker on the map
+                    mMap.addMarker(new MarkerOptions().position(latLng).title(i + ": " + address.getSubThoroughfare() + address.getSubThoroughfare()));
+                    mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+                }
+            }
         }
     }
 }
