@@ -5,6 +5,8 @@ import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Criteria;
 import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
@@ -28,6 +30,17 @@ import java.util.Locale;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
+    private Location myLocation;
+    private LocationManager locationManager;
+    private boolean isGPSEnabled = false;
+    private boolean isNetworkEnabled = false;
+    private boolean canGetLocation = false;
+    private boolean getMyLocationOneTime;
+    private double latitude, longitude;
+
+    private static final long MIN_TIME_BW_UPDATES = 1000*5;
+    private static final float MIN_DISTANCE_CHANGE_FOR_UPDATES = 0.0f;
+    private static final int MY_LOC_ZOOM_FACTOR = 17;
 
     private EditText LocationSearch;
 
@@ -103,12 +116,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     userLocation = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
                     Log.d("MyMapsApp", "onSearch:using NETWORK_PROVIDER userLocation is: " + myLocation.getLatitude() + " " + myLocation.getLongitude());
                     Toast.makeText(this, "UserLoc" + myLocation.getLatitude() + myLocation.getLongitude(), Toast.LENGTH_SHORT);
-                } else if (myLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) != null) {
+                }
+                else if (myLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER) != null) {
                     Log.d("MyMapsApp", "onSearch: locationManager is not null ");
                     userLocation = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
                     Log.d("MyMapsApp", "onSearch:using NETWORK_PROVIDER userLocation is: " + myLocation.getLatitude() + " " + myLocation.getLongitude());
                     Toast.makeText(this, "UserLoc" + myLocation.getLatitude() + myLocation.getLongitude(), Toast.LENGTH_SHORT);
-                } else {
+                }
+                else {
                     Log.d("MyMapsApp", "onSearch: locationManager is null from getLastKnownLocation");
                 }
             }
@@ -144,6 +159,75 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
                 }
             }
+        }
+    }
+
+    public void getLocation() {
+        try {
+            locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+            //get GPS status, is providerEnabled returns true if user has enabled gps
+            isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            if (isGPSEnabled)
+                Log.d("myMapsApp","getLocation: GPS is enabled");
+            isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            if (isNetworkEnabled)
+                Log.d("myMapsApp","getLocation: Network is enabled");
+
+            if (!isGPSEnabled && !isNetworkEnabled) {
+                Log.d("myMapsApp", "getLocation: no provider is enabled");
+            }
+            else {
+                if (isNetworkEnabled) {
+                    //Request location updates
+                    if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+                        && (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
+                        return;
+                    }
+                    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                            MIN_TIME_BW_UPDATES,
+                            MIN_DISTANCE_CHANGE_FOR_UPDATES, locationListenerNetwork);
+                }
+                if (isGPSEnabled) {
+                    //locationManager request for GPS_PROVIDER
+                }
+            }
+        }
+        catch (Exception e) {
+            Log.d("myMapsApp","getLocation: exception in getLocation");
+            e.printStackTrace();
+        }
+    }
+
+    LocationListener locationListenerNetwork = new LocationListener() {
+
+        @Override
+        public void onLocationChanged(Location location) {
+            dropAmarker (LocationManager.NETWORK_PROVIDER);
+
+            if (getMyLocationOneTime == false) {
+                locationManager.removeUpdates(this);
+                locationManager.removeUpdates(locationListenerGPS);
+                getMyLocationOneTime = true;
+            }
+            else {
+
+            }
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+
         }
     }
 }
