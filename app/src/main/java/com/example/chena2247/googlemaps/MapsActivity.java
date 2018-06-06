@@ -72,7 +72,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         LatLng palo = new LatLng(37, -122);
         mMap.addMarker(new MarkerOptions().position(palo).title("Birthplace"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(palo));
-
+/*
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Log.d("MyMapsApp", "Failed FINE permission check");
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 2);
@@ -86,9 +86,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)
                 || (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)) {
             mMap.setMyLocationEnabled(true);
-        }
+        }*/
 
         locationSearch = (EditText) findViewById(R.id.editText_addr);
+        getMyLocationOneTime = false;
+        getLocation();
     }
         //onSearch()
     public void onSearch(View v) {
@@ -207,7 +209,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             if (getMyLocationOneTime == false) {
                 locationManager.removeUpdates(this);
-                locationManager.removeUpdates(locationListenerGPS);
+                locationManager.removeUpdates(locationListenerGps);
                 getMyLocationOneTime = true;
             }
             else {
@@ -217,6 +219,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         @Override
         public void onStatusChanged(String provider, int status, Bundle extras) {
+            Log.d("myMapsApp","getLocation: exception in getLocation");
 
         }
 
@@ -229,5 +232,66 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         public void onProviderDisabled(String provider) {
 
         }
+    }
+
+    LocationListener locationListenerGps = new LocationListener() {
+
+        @Override
+        public void onLocationChanged(Location location) {
+            dropAmarker (LocationManager.GPS_PROVIDER);
+
+            //if doing one time remove updates to both gps and network
+            //else do nothing
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+            //switch (i)
+                //case LocationProvider.AVAILABLE:
+                //printout log.d and, or toast message
+                // break;
+                //case LocationProvider.OUT_OF_SERVICE
+                //enable network updates
+                // breakl
+                // case LocationProvider.TEMPORARILY_UNAVAILABLE;
+                // enable both network and gps
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+
+        }
+    }
+
+    public void dropAmarker (String provider) {
+        //if(locationManager != null)
+            // if (checkSelfPermission fails)
+                // return
+            // myLocation = locationManager.getLastKnownLocation(provider);
+        //LatLng userLocation = null;
+        // if(myLocation == null) print log or toast message
+        // else
+            //userLocation = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
+            //CameraUpdate update = CameraUpdateFactory.newLatLngZoom(userLocation, MY_LOC_ZOOM_FACTOR);
+            //if (provider == LocationManager.GPS_PROVIDER)
+                //add circle for the marker with 2 outer rings
+                //mMap.addCircle(new CircleOptions())
+                    //.center(userLocation)
+                    //.radius(1)
+                    //strokeColor(Color.RED)
+                    //strokeWidth(2)
+                    //fillColor(Color.RED)
+            //else add circle for the marker with 2 outer rings (blue)
+            //mMap.anim
+
+    }
+
+    public void changeView (View view) {
+
     }
 }
